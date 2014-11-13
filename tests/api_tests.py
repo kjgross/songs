@@ -185,6 +185,43 @@ class TestAPI(unittest.TestCase):
             contents = f.read()
         self.assertEqual(contents, "File contents")
         
+    def testPostSongAnalyse(self):
+        """ Posting a new song """
+        fileA = models.File(id=1, filename="FileA")
+        fileB = models.File(id=2, filename="FileB")
+        fileC = models.File(id=3, filename="FileC")
+        songA = models.Song(id=1, column=1)
+        songB = models.Song(id=2, column=3)
+        session.add_all([fileA, fileB, fileC, songA, songB])
+        session.commit()
 
+
+        data = {
+            "file": {
+                "id":3
+            }
+        }
+
+        response = self.client.get("/api/songs/{}/analysis".format(songB.id),
+            data=json.dumps(data),
+            content_type="application/json",
+            headers=[("Accept", "application/json")]
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.mimetype, "application/json")
+        self.assertEqual(urlparse(response.headers.get("Location")).path,
+                         "/api/songs/1/analysis")
+
+        data = json.loads(response.data)
+        self.assertEqual(data["id"], 1)
+        self.assertEqual(data["column"], 3)
+
+        songs = session.query(models.Song).all()
+        self.assertEqual(len(songs), 1)
+
+        song = songs[0]
+        self.assertEqual(song.id, 1)
+        self.assertEqual(song.column, 3)
 
 

@@ -5,6 +5,7 @@ from flask import request, Response, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from jsonschema import validate, ValidationError
 
+from analysis import analyse
 import models
 import decorators
 import analysis
@@ -102,6 +103,42 @@ def file_post():
     data = db_file.as_dictionary()
     return Response(json.dumps(data), 201, mimetype="application/json")
 
+
+## ASSIGNMENT 3
+#In your chords/api.py file, add a GET endpoint for /api/songs/<id>/analysis. The endpoint should:
+
+#Check whether a song with the correct ID exists
+#Get the filename of the song from the database
+#Call the analyse function, passing in the path of the uploaded file
+#Return the results of the analysis as a JSON object
+
+@app.route("/api/songs/<int:id>/analysis", methods=["GET"])
+@decorators.accept("application/json")
+def song_analysis_get(id):
+    """ Get the analysis for a single song endpoint """
+    # Get the song from the database
+    song = session.query(models.Song).get(id)
+
+    # Check whether the song exists
+    # If not return a 404 with a helpful message
+    if not song:
+        message = "Could not find song with id {}".format(id)
+        data = json.dumps({"message": message})
+        return Response(data, 404, mimetype="application/json")
+
+    # Get the filename
+    files = session.query(models.File).all()
+    file1id = files[song.column-1].id
+    #file1name = session.query(models.File).get(filename)
+    #songname = file[song.column].filename
+    songname = files[file1id-1].filename
+    analysis = analyse(songname)
+    data = json.dumps(analysis)
+
+
+
+
+    return Response(data, 200, mimetype="application/json")
 
 
 
